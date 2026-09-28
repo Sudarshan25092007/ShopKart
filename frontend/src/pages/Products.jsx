@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import ProductCard from '../components/ProductCard';
-import { getProducts } from '../services/api';
+import { getProducts, getWishlist } from '../services/api';
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
+  const [wishlistIds, setWishlistIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -19,6 +20,23 @@ const Products = () => {
   useEffect(() => {
     setSearchInput(searchParam);
   }, [searchParam]);
+
+  const syncWishlist = async () => {
+    try {
+      const res = await getWishlist();
+      const ids = new Set((res.data.wishlist || []).map((p) => p._id));
+      setWishlistIds(ids);
+    } catch {
+      // Unauthenticated or network error
+    }
+  };
+
+  useEffect(() => {
+    syncWishlist();
+    const handleUpdate = () => syncWishlist();
+    window.addEventListener('wishlist-updated', handleUpdate);
+    return () => window.removeEventListener('wishlist-updated', handleUpdate);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -50,7 +68,7 @@ const Products = () => {
 
         const res = await getProducts(params);
         setProducts(res.data.products || []);
-      } catch (err) {
+      } catch {
         setError('Something went wrong while loading products.');
       } finally {
         setLoading(false);
@@ -129,7 +147,19 @@ const Products = () => {
         {!loading && !error && products.length > 0 && (
           <div className="products-grid">
             {products.map((product) => (
-              <ProductCard key={product._id} product={product} />
+              <ProductCard
+                key={product._id}
+                product={product}
+                isInitiallyWishlisted={wishlistIds.has(product._id)}
+                onWishlistChange={(id, saved) => {
+                  setWishlistIds((prev) => {
+                    const next = new Set(prev);
+                    if (saved) next.add(id);
+                    else next.delete(id);
+                    return next;
+                  });
+                }}
+              />
             ))}
           </div>
         )}

@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetails from './pages/ProductDetails';
+import Wishlist from './pages/Wishlist';
 import { getProfile } from './services/api';
 
 const ProtectedRoute = ({ user, children }) => {
@@ -80,6 +81,14 @@ function App() {
               element={
                 <ProtectedRoute user={user}>
                   <ProductDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/wishlist"
+              element={
+                <ProtectedRoute user={user}>
+                  <Wishlist />
                 </ProtectedRoute>
               }
             />

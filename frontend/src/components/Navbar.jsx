@@ -1,9 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { logoutCustomer } from '../services/api';
+import { logoutCustomer, getWishlist } from '../services/api';
 
 const Navbar = ({ user, setUser }) => {
   const navigate = useNavigate();
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) {
+      setWishlistCount(0);
+      return;
+    }
+
+    const fetchCount = () => {
+      getWishlist()
+        .then((res) => {
+          setWishlistCount(res.data.count || 0);
+        })
+        .catch(() => {});
+    };
+
+    fetchCount();
+    window.addEventListener('wishlist-updated', fetchCount);
+    return () => window.removeEventListener('wishlist-updated', fetchCount);
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -29,6 +49,9 @@ const Navbar = ({ user, setUser }) => {
             <div className="nav-user-group">
               <Link to="/products" className="nav-link" id="nav-products-link">
                 Products
+              </Link>
+              <Link to="/wishlist" className="nav-link nav-wishlist-link" id="nav-wishlist-link">
+                Wishlist {wishlistCount > 0 && <span className="wishlist-count-badge">({wishlistCount})</span>}
               </Link>
               <Link to="/home" className="nav-link" id="nav-profile-link">
                 Profile

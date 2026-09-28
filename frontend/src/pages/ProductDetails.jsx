@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getProductById } from '../services/api';
+import { getProductById, getWishlist, addToWishlist, removeFromWishlist } from '../services/api';
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -8,6 +8,9 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [added, setAdded] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [wishlistError, setWishlistError] = useState('');
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -26,9 +29,41 @@ const ProductDetails = () => {
     fetchProduct();
   }, [id]);
 
+  useEffect(() => {
+    if (id) {
+      getWishlist()
+        .then((res) => {
+          const found = (res.data.wishlist || []).some((item) => item._id === id);
+          setIsWishlisted(found);
+        })
+        .catch(() => {});
+    }
+  }, [id]);
+
   const handleAddToCart = () => {
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
+  };
+
+  const handleWishlistToggle = async () => {
+    if (wishlistLoading) return;
+    setWishlistLoading(true);
+    setWishlistError('');
+    try {
+      if (isWishlisted) {
+        await removeFromWishlist(id);
+        setIsWishlisted(false);
+      } else {
+        await addToWishlist(id);
+        setIsWishlisted(true);
+      }
+      window.dispatchEvent(new Event('wishlist-updated'));
+    } catch {
+      setWishlistError('Unable to update wishlist. Please try again.');
+      setTimeout(() => setWishlistError(''), 3000);
+    } finally {
+      setWishlistLoading(false);
+    }
   };
 
   if (loading) {
@@ -98,7 +133,20 @@ const ProductDetails = () => {
               >
                 {added ? '✓ Added to Cart' : product.stock > 0 ? '🛒 Add to Cart' : 'Out of Stock'}
               </button>
+              <button
+                type="button"
+                className={`btn details-wishlist-btn ${isWishlisted ? 'btn-wishlisted' : 'btn-outline'}`}
+                onClick={handleWishlistToggle}
+                disabled={wishlistLoading}
+              >
+                {wishlistLoading
+                  ? '⏳ Updating...'
+                  : isWishlisted
+                  ? '♥ Saved in Wishlist'
+                  : '♡ Add to Wishlist'}
+              </button>
             </div>
+            {wishlistError && <p className="card-error-msg">{wishlistError}</p>}
           </div>
         </div>
       </div>

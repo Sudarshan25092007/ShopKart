@@ -20,4 +20,10 @@ export const getProducts = (params) => api.get('/products', { params });
 export const getProductById = (id) => api.get(`/products/${id}`);
 export const createProduct = (data) => api.post('/products', data);
 
+export const getWishlist = () => api.get('/wishlist');
+export const addToWishlist = (productId) => api.post(`/wishlist/${productId}`);
+export const removeFromWishlist = (productId) => api.delete(`/wishlist/${productId}`);
+export const toggleWishlist = (productId) => api.patch(`/wishlist/${productId}/toggle`);
+
 export default api;
+
