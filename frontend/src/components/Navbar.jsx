@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { logoutCustomer, getWishlist } from '../services/api';
+import { useCart } from '../context/CartContext';
 
 const Navbar = ({ user, setUser }) => {
   const navigate = useNavigate();
   const [wishlistCount, setWishlistCount] = useState(0);
+  const { totalItems, clearCart } = useCart();
 
   useEffect(() => {
     if (!user) {
@@ -32,6 +34,7 @@ const Navbar = ({ user, setUser }) => {
       console.error(err);
     } finally {
       localStorage.clear();
+      clearCart();
       if (setUser) setUser(null);
       navigate('/login');
     }
@@ -52,6 +55,9 @@ const Navbar = ({ user, setUser }) => {
               </Link>
               <Link to="/wishlist" className="nav-link nav-wishlist-link" id="nav-wishlist-link">
                 Wishlist {wishlistCount > 0 && <span className="wishlist-count-badge">({wishlistCount})</span>}
+              </Link>
+              <Link to="/cart" className="nav-link nav-cart-link" id="nav-cart-link">
+                Cart {totalItems > 0 && <span className="cart-count-badge">({totalItems})</span>}
               </Link>
               <Link to="/home" className="nav-link" id="nav-profile-link">
                 Profile

@@ -7,7 +7,9 @@ import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetails from './pages/ProductDetails';
 import Wishlist from './pages/Wishlist';
+import Cart from './pages/Cart';
 import { getProfile } from './services/api';
+import { CartProvider } from './context/CartContext';
 
 const ProtectedRoute = ({ user, children }) => {
   if (!user) {
@@ -47,63 +49,73 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="app-layout">
-        <Navbar user={user} setUser={setUser} />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Navigate to={user ? "/products" : "/login"} replace />} />
-            <Route
-              path="/login"
-              element={
-                <PublicOnlyRoute user={user}>
-                  <Login setUser={setUser} />
-                </PublicOnlyRoute>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <PublicOnlyRoute user={user}>
-                  <Register />
-                </PublicOnlyRoute>
-              }
-            />
-            <Route
-              path="/products"
-              element={
-                <ProtectedRoute user={user}>
-                  <Products />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/products/:id"
-              element={
-                <ProtectedRoute user={user}>
-                  <ProductDetails />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/wishlist"
-              element={
-                <ProtectedRoute user={user}>
-                  <Wishlist />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/home"
-              element={
-                <ProtectedRoute user={user}>
-                  <Home user={user} setUser={setUser} />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<Navigate to={user ? "/products" : "/login"} replace />} />
-          </Routes>
-        </main>
-      </div>
+      <CartProvider user={user}>
+        <div className="app-layout">
+          <Navbar user={user} setUser={setUser} />
+          <main className="main-content">
+            <Routes>
+              <Route path="/" element={<Navigate to={user ? "/products" : "/login"} replace />} />
+              <Route
+                path="/login"
+                element={
+                  <PublicOnlyRoute user={user}>
+                    <Login setUser={setUser} />
+                  </PublicOnlyRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <PublicOnlyRoute user={user}>
+                    <Register />
+                  </PublicOnlyRoute>
+                }
+              />
+              <Route
+                path="/products"
+                element={
+                  <ProtectedRoute user={user}>
+                    <Products />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/products/:id"
+                element={
+                  <ProtectedRoute user={user}>
+                    <ProductDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/wishlist"
+                element={
+                  <ProtectedRoute user={user}>
+                    <Wishlist />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cart"
+                element={
+                  <ProtectedRoute user={user}>
+                    <Cart />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/home"
+                element={
+                  <ProtectedRoute user={user}>
+                    <Home user={user} setUser={setUser} />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<Navigate to={user ? "/products" : "/login"} replace />} />
+            </Routes>
+          </main>
+        </div>
+      </CartProvider>
     </BrowserRouter>
   );
 }

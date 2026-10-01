@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getProductById, getWishlist, addToWishlist, removeFromWishlist } from '../services/api';
+import { useCart } from '../context/CartContext';
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -8,9 +9,13 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [added, setAdded] = useState(false);
+  const [cartError, setCartError] = useState('');
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [wishlistError, setWishlistError] = useState('');
+
+  const { addToCart, itemLoadingMap } = useCart();
+  const isCartLoading = !!itemLoadingMap[id];
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -40,9 +45,17 @@ const ProductDetails = () => {
     }
   }, [id]);
 
-  const handleAddToCart = () => {
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+  const handleAddToCart = async () => {
+    if (!product || product.stock <= 0 || isCartLoading) return;
+    setCartError('');
+    const res = await addToCart(product._id);
+    if (res.success) {
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+    } else {
+      setCartError(res.message);
+      setTimeout(() => setCartError(''), 3500);
+    }
   };
 
   const handleWishlistToggle = async () => {
@@ -129,9 +142,15 @@ const ProductDetails = () => {
               <button
                 className={`btn btn-submit add-cart-btn ${added ? 'btn-success' : ''}`}
                 onClick={handleAddToCart}
-                disabled={product.stock === 0}
+                disabled={product.stock === 0 || isCartLoading}
               >
-                {added ? '✓ Added to Cart' : product.stock > 0 ? '🛒 Add to Cart' : 'Out of Stock'}
+                {isCartLoading
+                  ? '⏳ Adding...'
+                  : added
+                  ? '✓ Added to Cart'
+                  : product.stock > 0
+                  ? '🛒 Add to Cart'
+                  : 'Out of Stock'}
               </button>
               <button
                 type="button"
@@ -146,6 +165,7 @@ const ProductDetails = () => {
                   : '♡ Add to Wishlist'}
               </button>
             </div>
+            {cartError && <p className="card-error-msg">{cartError}</p>}
             {wishlistError && <p className="card-error-msg">{wishlistError}</p>}
           </div>
         </div>

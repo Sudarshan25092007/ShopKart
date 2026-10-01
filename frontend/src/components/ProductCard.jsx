@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { addToWishlist, removeFromWishlist } from '../services/api';
+import { useCart } from '../context/CartContext';
 
 const ProductCard = ({ product, isInitiallyWishlisted = false, onWishlistChange }) => {
   const [isSaved, setIsSaved] = useState(isInitiallyWishlisted);
-  const [loading, setLoading] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [cartSuccess, setCartSuccess] = useState(false);
+
+  const { addToCart, itemLoadingMap, cart } = useCart();
+  const isAddingToCart = !!itemLoadingMap[product._id];
+  const isInCart = (cart || []).some((item) => (item.product?._id || item.product) === product._id);
 
   useEffect(() => {
     setIsSaved(isInitiallyWishlisted);
@@ -13,9 +19,9 @@ const ProductCard = ({ product, isInitiallyWishlisted = false, onWishlistChange 
 
   const handleWishlistToggle = async (e) => {
     e.preventDefault();
-    if (loading) return;
+    if (wishlistLoading) return;
 
-    setLoading(true);
+    setWishlistLoading(true);
     setErrorMessage('');
 
     try {
@@ -37,7 +43,20 @@ const ProductCard = ({ product, isInitiallyWishlisted = false, onWishlistChange 
         setTimeout(() => setErrorMessage(''), 3500);
       }
     } finally {
-      setLoading(false);
+      setWishlistLoading(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (product.stock <= 0 || isAddingToCart) return;
+    setErrorMessage('');
+    const res = await addToCart(product._id);
+    if (res.success) {
+      setCartSuccess(true);
+      setTimeout(() => setCartSuccess(false), 2000);
+    } else {
+      setErrorMessage(res.message);
+      setTimeout(() => setErrorMessage(''), 3500);
     }
   };
 
@@ -57,12 +76,12 @@ const ProductCard = ({ product, isInitiallyWishlisted = false, onWishlistChange 
         <button
           type="button"
           onClick={handleWishlistToggle}
-          disabled={loading}
+          disabled={wishlistLoading}
           aria-label={isSaved ? 'Remove from Wishlist' : 'Add to Wishlist'}
           className={`card-heart-btn ${isSaved ? 'active' : ''}`}
           title={isSaved ? 'Remove from Wishlist' : 'Add to Wishlist'}
         >
-          {loading ? '⏳' : isSaved ? '♥' : '♡'}
+          {wishlistLoading ? '⏳' : isSaved ? '♥' : '♡'}
         </button>
       </div>
 
@@ -73,21 +92,36 @@ const ProductCard = ({ product, isInitiallyWishlisted = false, onWishlistChange 
           {product.stock > 0 ? `${product.stock} units left` : 'Out of Stock'}
         </p>
 
-        {errorMessage && (
-          <div className="card-error-msg">{errorMessage}</div>
-        )}
+        {errorMessage && <div className="card-error-msg">{errorMessage}</div>}
+
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          disabled={product.stock <= 0 || isAddingToCart}
+          className={`btn btn-primary card-cart-btn ${cartSuccess ? 'btn-success' : ''}`}
+        >
+          {isAddingToCart
+            ? '⏳ Adding...'
+            : cartSuccess
+            ? '✓ Added to Cart'
+            : product.stock <= 0
+            ? 'Out of Stock'
+            : isInCart
+            ? 'Add to Cart 🛒'
+            : 'Add to Cart 🛒'}
+        </button>
 
         <div className="card-btn-group">
-          <Link to={`/products/${product._id}`} className="btn btn-primary product-view-btn">
+          <Link to={`/products/${product._id}`} className="btn btn-outline product-view-btn">
             View Details
           </Link>
           <button
             type="button"
             onClick={handleWishlistToggle}
-            disabled={loading}
+            disabled={wishlistLoading}
             className={`btn wishlist-action-btn ${isSaved ? 'btn-wishlisted' : 'btn-outline'}`}
           >
-            {loading ? '⏳ Saving...' : isSaved ? '♥ Wishlisted' : '♡ Wishlist'}
+            {wishlistLoading ? '⏳ Saving...' : isSaved ? '♥ Wishlisted' : '♡ Wishlist'}
           </button>
         </div>
       </div>
